@@ -1527,25 +1527,25 @@
                     var cpctx = cp.getContext( '2d' );
                     var steps = Math.round( this.options.amount * 20 );
                     var wscaled, hscaled;
-			
+            
                     for ( var i = 0; i < steps; i++ ) {
                         wscaled = Math.max( 1, Math.round( sw - i ) );
                         hscaled = Math.max( 1, Math.round( sh - i ) );
 
                         cpctx.clearRect( 0, 0, sw, sh );
                         cpctx.drawImage( params.canvas, 0, 0, params.width, params.height, 0, 0, wscaled, hscaled );
-	
+    
                         if ( this.options.clear ) {
                             ctx.clearRect( rect.left, rect.top, rect.width, rect.height );
-	                    }
+                        }
 
                         ctx.drawImage( cp, 0, 0, wscaled, hscaled, 0, 0, params.width, params.height );
-			        }
+                    }
 
                     ctx.restore();
-			        params.changed = false;
-			
-			        return true;
+                    params.changed = false;
+            
+                    return true;
                 } else if ( mn.client.IE ) {
                     var radius = 10 * this.options.amount;
                     params.image.style.filter += ' progid:DXImageTransform.Microsoft.Blur(pixelradius=' + radius + ')';
@@ -1681,7 +1681,7 @@
                     ctx.drawImage( cp, 0, 0, r, g, 0, 0, params.width, params.height );
                 }
 
-                cpctx.drawImage( params.canvas, 0, 0, params.width, params.height, 0, 0, params.width - 4, params.height - 4 );				
+                cpctx.drawImage( params.canvas, 0, 0, params.width, params.height, 0, 0, params.width - 4, params.height - 4 );                
 
                 params.changed = false;
                 return true;
@@ -1780,8 +1780,8 @@
                     this.mul = this.options.legacy? this.options.contrast : this.options.brightness * this.options.contrast;
                     this.add = this.options.legacy? ( this.options.brightness - 128 ) * this.options.contrast + 128 : -this.options.contrast  * 128 + 128;
                 } else {
-                     this.mul = this.options.legacy? 1 : this.options.brightness;
-                     this.add = this.options.legacy? this.options.brightness : 0;
+                    this.mul = this.options.legacy? 1 : this.options.brightness;
+                    this.add = this.options.legacy? this.options.brightness : 0;
                 }
             
                 this.d = mn.filtrutil.getCanvasData( params );
@@ -2148,7 +2148,7 @@
                 if ( mn.client.hasCanvasData && ( this.m != 1 ) ) {
                     this.t = [];
                     for ( var i = 0; i < 256; i++ ) {
-                        this.t[i] = Math.min( 255, Math.max( 0, 255 * ( 1 - Math.exp( - ( i / 255 ) * this.m ) ) ) );
+                        this.t[i] = Math.min( 255, Math.max( 0, 255 * ( 1 - Math.exp( -( i / 255 ) * this.m ) ) ) );
                     }
 
                     this.d = mn.filtrutil.getCanvasData( params );
@@ -2219,7 +2219,7 @@
             process:   mn.filtr.filters.flip.process
         }
     } )();
-				
+                
     // gamma
     mn.filtr.filters.gamma = ( function() {
         return {
@@ -2713,8 +2713,8 @@
                     o = [ [ i - ( rect.width + 1 ) * 4, i - rect.width * 4, i - ( rect.width - 1 ) * 4], [i - 4, i, i + 4], [ i + ( rect.width - 1 ) * 4, i + rect.width * 4, i + ( rect.width + 1 ) * 4]];
                     l = g[0] * ( a[o[0][0]] || 0 ) + g[1] * ( a[o[0][1]] || 0 ) + g[2] * ( a[o[0][2]] || 0 ) + g[3] * ( a[o[1][0]] || 0 ) + g[4] * ( a[o[1][1]] || 0 ) + g[5] * ( a[o[1][2]] || 0 ) + g[6] * ( a[o[2][0]] || 0 ) + g[7] * ( a[o[2][1]] || 0 ) + g[8] * ( a[o[2][2]] || 0 );
                     m = r[0] * ( a[o[0][0]] || 0 ) + r[1] * ( a[o[0][1]] || 0 ) + r[2] * ( a[o[0][2]] || 0 ) + r[3] * ( a[o[1][0]] || 0 ) + r[4] * ( a[o[1][1]] || 0 ) + r[5] * ( a[o[1][2]] || 0 ) + r[6] * ( a[o[2][0]] || 0 ) + r[7] * ( a[o[2][1]] || 0 ) + r[8] * ( a[o[2][2]] || 0 );
-	                q = Math.min( 255, Math.max( 0, ( Math.sqrt( ( l * l ) + ( m * m ) ) / divisor ) + bias ) );
-	
+                    q = Math.min( 255, Math.max( 0, ( Math.sqrt( ( l * l ) + ( m * m ) ) / divisor ) + bias ) );
+    
                     d[i] = d[i + 1] = d[i + 2] = q;
                 }
 
