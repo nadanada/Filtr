@@ -297,24 +297,6 @@
         return m;
     };
 
-    Array.prototype.$insertAt = function( pos, d ) {
-        if ( ( pos == 0 ) && !this.length ) {
-            this.push( d );
-            return;
-        }
-     
-        if ( pos > this.length - 1 ) {
-            return;
-        }
-
-        var tmp = this.slice( pos, this.length );
-        this[pos] = d;
-
-        for ( var a = 0; a <= tmp.length - 1; a++ ) {
-            this[a + pos + 1] = tmp[a];
-        }
-    };
-
     var $type = function( ele ) {
         return $type.s.call( ele ).match( /^\[object\s(.*)\]$/ )[1].toLowerCase();
     };
@@ -683,22 +665,21 @@
     // history object
     
     mn.filtrhistory = function() {
+        // TODO: eventually we can remove this object in favor of the inbuilt array functionality,
+        // depends on the planned enhancements
         var stack = [];
     
         this.push = function( data ) {
-            return ( stack.$insertAt( 0, data ) );
+            stack.push( data );
+            return true;
         };
         
-        this.shift = function() { 
+        this.pop = function() { 
             if ( stack.length == 0 ) {
                 return false;            
             }
             
-            stack.reverse();
-            var last = stack.pop();
-            stack.reverse();
-
-            return last;
+            return stack.pop();
         };
     };
 
@@ -757,7 +738,7 @@
                             blocksize = h - y;
                         }
                     
-                        callback( x, y, c, pctx, rect );
+                        callback( x, y, blocksize, c, pctx, rect );
                     }
                 }
         
@@ -1043,20 +1024,15 @@
                 }
                 
                 var params = {
-                    image:    img,
-                    canvas:   canvas,
-                    width:    w,
-                    height:   h,
-                    changed:  true,
-                    options:  options,
-                    replaced: false
+                    image:   img,
+                    canvas:  canvas,
+                    width:   w,
+                    height:  h,
+                    changed: true,
+                    options: options
                 };
 
                 filter = mn.filtr.filters[filter];
-                
-                if ( typeof filter.options != 'undefined' ) {
-                    options = $extend( options, filter.options );
-                }
                 
                 if ( !filter.supported || !filter.process( params, options ) ) {
                     return false;
@@ -1157,7 +1133,7 @@
             undo: function( ele ) {
                 var d;
                 
-                if ( ( typeof ele.__history == 'undefined' ) || !( d = ele.__history.shift() ) ) {
+                if ( ( typeof ele.__history == 'undefined' ) || !( d = ele.__history.pop() ) ) {
                     return false;
                 }
                 
@@ -1306,16 +1282,14 @@
                     opacity: 100
                 }, options || {} );
 
-                if ( mn.client.hasCanvasData && mn.client.hasAlpha ) {
-                    this.d = mn.filtrutil.getCanvasData( params );
+                this.d = mn.filtrutil.getCanvasData( params );
 
-                    return mn.filtriterator.linear( params, function( pr, pg, pb, pa ) {
-                        var t = Math.round( this.d[pr] * 0.299 + this.d[pg] * 0.587 + this.d[pb] * 0.114 );
+                return mn.filtriterator.linear( params, function( pr, pg, pb, pa ) {
+                    var t = Math.round( this.d[pr] * 0.299 + this.d[pg] * 0.587 + this.d[pb] * 0.114 );
                         
-                        this.d[pr] = this.d[pg] = this.d[pb] = 0;
-                        this.d[pa] = 255 - t;
-                    }.$bind( this ) );
-                }
+                    this.d[pr] = this.d[pg] = this.d[pb] = 0;
+                    this.d[pa] = 255 - t;
+                }.$bind( this ) );
             }
         }
     } )();
@@ -2171,7 +2145,7 @@
                 this.options = $extend( {
                     axis: 'horizontal'
                 }, options || {} );
-                    
+
                 if ( mn.client.hasCanvasData ) {
                     var rect = params.options.rect;
                     var cc   = mn.filtrutil.createCanvas( rect.width, rect.height, true );
@@ -2200,26 +2174,7 @@
             }
         }
     } )();
-        
-    // flip (horizontal)
-    mn.filtr.filters.fliph = ( function() {
-        return {
-            supported: ( mn.client.hasCanvasData || mn.client.IE ),
-            options:   {axis: 'horizontal'},
-            process:   mn.filtr.filters.flip.process
-        }
-    } )();
-   
-   
-    // flip (vertical)
-    mn.filtr.filters.flipv = ( function() {
-        return {
-            supported: ( mn.client.hasCanvasData || mn.client.IE ),
-            options:   {axis: 'vertical'},
-            process:   mn.filtr.filters.flip.process
-        }
-    } )();
-                
+               
     // gamma
     mn.filtr.filters.gamma = ( function() {
         return {
@@ -2492,13 +2447,11 @@
         return {
             supported: ( mn.client.hasCanvasData && mn.client.hasAlpha ),
             process:   function( params, options ) {
-                if ( mn.client.hasCanvasData && mn.client.hasAlpha ) {
-                    this.d = mn.filtrutil.getCanvasData( params );
+                this.d = mn.filtrutil.getCanvasData( params );
                         
-                    return mn.filtriterator.linear( params, function( pr, pg, pb, pa ) {
-                        this.d[pa] = 255 - this.d[pa];
-                    }.$bind( this ) );
-                }
+                return mn.filtriterator.linear( params, function( pr, pg, pb, pa ) {
+                    this.d[pa] = 255 - this.d[pa];
+                }.$bind( this ) );
             }
         }
     } )();
@@ -2672,7 +2625,7 @@
                             this.d[pb] = $bound( this.d[pb] + mn.filtrutil.randomInt( -this.options.strength, this.options.strength ), 0, 255 );
                         }
                     }
-                }.bind( this ) );
+                }.$bind( this ) );
             }
         }
     } )();
@@ -2734,15 +2687,15 @@
                     
                 this.options.blocksize = Math.max( 1, this.options.blocksize );
                 params.changed = false;
-                
+
                 this.ctx = params.canvas.getContext( '2d' );
-                
-                return mn.filtriterator.block( params, this.options.blocksize, function( x, y, c, pctx, rect ) {
-                    pctx.drawImage( c, x, y, this.options.blocksize, this.options.blocksize, 0, 0, 1, 1 );
+
+                return mn.filtriterator.block( params, this.options.blocksize, function( x, y, blocksize, c, pctx, rect ) {
+                    pctx.drawImage( c, x, y, blocksize, blocksize, 0, 0, 1, 1 );
                     
                     var d = pctx.getImageData( 0, 0, 1, 1 ).data;
                     this.ctx.fillStyle = 'rgb(' + d[0] + ',' + d[1] + ',' + d[2] + ')';
-                    this.ctx.fillRect( rect.left + x, rect.top + y, this.options.blocksize, this.options.blocksize );
+                    this.ctx.fillRect( rect.left + x, rect.top + y, blocksize, blocksize );
                 }.$bind( this ) );
             }
         }
@@ -2790,8 +2743,17 @@
                     
                     if ( pixx < 0 ) pixx = 0;
                     if ( pixy < 0 ) pixy = 0;
-                    if ( diax + pixx > w ) diax = w - pixx;
-                    if ( diay + pixy > h ) diay = h - pixy;
+
+                    if ( diax + pixx > w ) {
+                        diax = w - pixx;
+                        pixx--;
+                    }
+
+                    if ( diay + pixy > h ) {
+                        diay = h - pixy;
+                        pixy--;
+                    }
+
                     if ( diax < 1 ) diax = 1;
                     if ( diay < 1 ) diay = 1;
                     
